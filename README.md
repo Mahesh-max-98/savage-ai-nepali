@@ -1,31 +1,37 @@
-# Savage AI Nepali — free automation
+# Savage AI Nepali — Joke & Meme Creator
 
-A no-hosting-cost Nepali/Nepanglish humour publisher. The active free deployment uses **GitHub Actions** as the scheduler; it does not require Render, a paid worker, a paid database, or an OpenAI image API key.
+**Tagline:** नयाँ दृष्टि, नयाँ हाँसो।
+
+Savage AI Nepali creates original, funny Nepali and Nepanglish jokes with matching meme images. It prepares content for you to review and publish manually.
 
 ## What it does
 
-- Runs a scheduled check every 30 minutes (GitHub may delay scheduled runs).
-- Uses Groq's API for short original captions.
-- Tries a free Pollinations image endpoint; if unavailable, creates a local meme-style poster so the Facebook post still has an image.
-- Checks recent captions for near-duplicates and basic unsafe language.
-- Publishes a photo post to your Facebook Page through Meta Graph API.
-- Saves posting history and status in the repository.
-- Provides a free, read-only GitHub Pages dashboard.
+- Generates original Nepali and Nepanglish jokes using Groq.
+- Varies joke topics and formats: short dialogues, relatable one-liners, savage comebacks, and expectation-vs-reality humour.
+- Creates a matching square meme illustration.
+- Saves each joke as a Markdown file and each image in `generated/`.
+- Keeps an index of previously generated jokes to reduce repetition.
+- Lets you manually start a generation run from GitHub Actions.
+
+## Important: manual publishing only
+
+**This repository does not publish anything to Facebook.** It does not call the Facebook Graph API and does not need a Facebook Page ID or Facebook access token. You choose which generated joke/image to upload to your Page.
 
 ## Setup
 
-Read [FREE_SETUP.md](FREE_SETUP.md). Add the three private GitHub Actions secrets:
-- `GROQ_API_KEY`
-- `FACEBOOK_PAGE_ID`
-- `FACEBOOK_PAGE_ACCESS_TOKEN`
+1. Open **Settings → Secrets and variables → Actions**.
+2. Add one repository secret: `GROQ_API_KEY`.
+3. Open **Actions → Savage AI Nepali · Joke & Meme Creator → Run workflow**.
+4. Select `generate` and run the workflow.
+5. Open the latest commit and the `generated/` folder to view/copy the joke and image.
 
-Never commit secrets or paste them into public files or chats.
+The model defaults to `openai/gpt-oss-120b`. The free Groq tier is subject to its current limits.
 
-## Important
+## Generated content
 
-- Automation starts **paused**. Enable it manually from GitHub Actions.
-- Default daily limit is 8 posts; interval is 30 minutes. This is a safety cap to avoid flooding your Page.
-- GitHub Actions standard runners are free for public repositories. The repository must remain public for this setup to use the public-repository free runner allowance.
-- Groq and Pollinations have service/rate limits; free access is not unlimited or guaranteed.
-- The static dashboard is public and read-only. Use the GitHub Actions workflow page for controls.
-- The previous Render/Flask deployment files are not used by the free automation path.
+Each run adds:
+- A `.md` file containing the joke, hashtags, and image link.
+- A matching `.png` meme image.
+- An updated `generated/index.json` content history.
+
+Review jokes before posting. AI-generated content can occasionally need editing.
