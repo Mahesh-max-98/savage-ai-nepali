@@ -214,7 +214,7 @@ def create_app():
             return jsonify({"error": "This post has already been published."}), 409
         try:
             from services.facebook import publish_photo
-            fb_id = publish_photo(post.caption + "\\n\\n" + post.hashtags, post.image_data, post.image_mime or "image/png")
+            fb_id = publish_photo(post.caption + "\n\n" + post.hashtags, post.image_data, post.image_mime or "image/png")
             post.facebook_post_id = fb_id
             post.status = "published"
             post.published_at = utcnow()
