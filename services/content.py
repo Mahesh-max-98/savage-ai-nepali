@@ -46,7 +46,7 @@ def generate_caption():
         f"- {item['title']} (source: {item['source']})"
         for item in trend_context["items"]
     ]
-    trend_text = "\\n".join(trend_lines) if trend_lines else (
+    trend_text = "\n".join(trend_lines) if trend_lines else (
         "- No live trend feed was available. Use evergreen Nepali everyday experiences."
     )
 
@@ -123,7 +123,7 @@ Use 3–5 relevant hashtags. No markdown fences or extra text.
 
     data = response.json()
     raw = (data["choices"][0]["message"].get("content") or "").strip()
-    raw = re.sub(r"^\\s*```(?:json)?\\s*|\\s*```\\s*$", "", raw, flags=re.IGNORECASE).strip()
+    raw = re.sub(r"^\s*```(?:json)?\s*|\s*```\s*$", "", raw, flags=re.IGNORECASE).strip()
     start, end = raw.find("{"), raw.rfind("}")
     if start < 0 or end < start:
         raise RuntimeError(f"Groq did not return a JSON object: {raw[:300]}")
@@ -143,7 +143,7 @@ Use 3–5 relevant hashtags. No markdown fences or extra text.
 
     clean_tags = []
     for tag in hashtags:
-        tag = re.sub(r"[^\\w#]", "", str(tag), flags=re.UNICODE)
+        tag = re.sub(r"[^\w#]", "", str(tag), flags=re.UNICODE)
         if tag:
             clean_tags.append(tag if tag.startswith("#") else f"#{tag}")
 
