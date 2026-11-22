@@ -1,76 +1,50 @@
-# Free setup — Savage AI Nepali
+# Setup — Savage AI Nepali Joke & Meme Creator
 
-This version avoids paid hosting and paid AI image APIs.
+This version creates jokes and meme images for you to publish manually. **It never posts to Facebook.**
 
-## Free architecture
+## 1. Add the Groq key
 
-- GitHub Actions: scheduled Python job every 30 minutes.
-- Groq: free-tier text API for captions (subject to provider limits).
-- Pollinations: best-effort free AI image endpoint. If unavailable or rate-limited, a local Pillow poster is generated instead.
-- Meta Graph API: publishes the image and caption to your Facebook Page.
-- Repository JSON files: posting state and history.
-- GitHub Pages: optional free, read-only dashboard.
-
-No Render web service, background worker, paid database, or OpenAI image API is required.
-
-## 1. Add private GitHub Actions secrets
-
-Open this repository:
+Open the GitHub repository:
 
 **Settings → Secrets and variables → Actions → New repository secret**
 
-Add these names one at a time:
+Create only this secret:
 
 | Secret name | Value |
 |---|---|
 | `GROQ_API_KEY` | Your Groq API key |
-| `FACEBOOK_PAGE_ID` | Your Facebook Page ID |
-| `FACEBOOK_PAGE_ACCESS_TOKEN` | Your Page access token |
 
-Keep the values private. Never put them in source files, issues, screenshots, or chats.
+Do not add Facebook Page ID or Facebook Page Access Token. They are not used by this version. Never commit or share your Groq key.
 
-## 2. Enable GitHub Actions
+## 2. Generate a joke and meme
 
-Open the repository's **Actions** tab and enable workflows if GitHub asks.
+1. Open the **Actions** tab.
+2. Select **Savage AI Nepali · Joke & Meme Creator**.
+3. Click **Run workflow**.
+4. Select `generate`.
+5. Click **Run workflow** again to start.
 
-The workflow is scheduled at minute 15 and 45 of each hour (UTC), every 30 minutes. GitHub can delay or occasionally skip scheduled runs during high load. In public repositories, scheduled workflows are disabled if the repository has no activity for 60 days.
+When it finishes, the workflow saves the joke and image into the repository's `generated/` folder.
 
-## 3. Start or pause automation
+## 3. Find your content
 
-Open **Actions → Savage AI Nepali · Free Auto Publisher → Run workflow**.
+Open the repository's **Code** tab, then open `generated/`.
 
-Choose one action:
-- `enable`: turn scheduled posting on.
-- `pause`: stop scheduled posting.
-- `publish_now`: create and publish one post immediately.
-- `status`: inspect the current status in the workflow logs.
+Each generation creates:
+- A Markdown file with the joke and hashtags.
+- A PNG image to use with the joke.
+- An updated `index.json` history.
 
-Automation is initially paused. The default daily limit is 8 posts, even though the scheduler checks every 30 minutes.
+Download or open the image, copy the joke, review it, and publish it yourself on your Facebook Page whenever you choose.
 
-## 4. Optional free dashboard
+## 4. Check content history
 
-Open **Settings → Pages**:
-1. Under Build and deployment, choose **Deploy from a branch**.
-2. Choose branch `main` and folder `/docs`.
-3. Save and wait for GitHub Pages to publish.
+Run the workflow with the `status` action to view how many jokes have been generated and the latest entries.
 
-Dashboard: https://mahesh-max-98.github.io/savage-ai-nepali/
+## Notes
 
-The dashboard is public and read-only. Use the Actions tab for start/pause/publish controls.
-
-## 5. Facebook requirements
-
-The Page token must belong to a Page you manage and have the required publishing permissions. The Meta app and your Page role may need appropriate permissions and review. See the official [Meta Page Photos API documentation](https://developers.facebook.com/docs/graph-api/reference/page/photos/).
-
-## Free-tier limitations
-
-- Scheduled jobs are not guaranteed to run at the exact minute. GitHub may delay them; scheduled workflows in public repos can be disabled after 60 days without repository activity.
-- Standard GitHub-hosted runners are free for public repositories. Keep the repository public for this setup; source code and posting history will be publicly visible. Repository secrets are stored separately from code.
-- Groq has rate limits and service availability limits. If its free quota is exhausted, a run will fail until quota resets or access is restored.
-- The free Pollinations image endpoint is best-effort and may rate-limit or change. If it fails, the program makes a local poster instead; that fallback is not AI-generated.
-- Facebook may reject publishing if the token expires, permissions are missing, or the Page has restrictions.
-- This setup has no paid always-on server and cannot promise uninterrupted 24/7 delivery.
-
-## Change the posting cap
-
-Edit `data/state.json` on the main branch. Keep `interval_minutes` at 30 and set `daily_limit` between 1 and 48. The default is 8 posts per day to reduce spam risk. Commit the change.
+- The default model is `openai/gpt-oss-120b`.
+- Groq free-tier limits and the free image endpoint may affect availability.
+- The image endpoint is best-effort; if unavailable, the project creates a local poster.
+- Review AI-generated content before posting.
+- No Facebook publishing, Facebook token, or automatic posting schedule is included.
