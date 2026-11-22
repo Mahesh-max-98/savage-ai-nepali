@@ -1,15 +1,17 @@
+
 name: Savage AI Nepali · Free Auto Publisher
 
 on:
   schedule:
     - cron: "15,45 * * * *"
+
   workflow_dispatch:
     inputs:
       action:
         description: "Choose what the automation should do"
         required: true
         type: choice
-        default: status
+        default: enable
         options:
           - enable
           - pause
@@ -27,6 +29,7 @@ jobs:
   publish:
     runs-on: ubuntu-latest
     timeout-minutes: 5
+
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
@@ -48,7 +51,7 @@ jobs:
           FACEBOOK_PAGE_ID: ${{ secrets.FACEBOOK_PAGE_ID }}
           FACEBOOK_PAGE_ACCESS_TOKEN: ${{ secrets.FACEBOOK_PAGE_ACCESS_TOKEN }}
           META_GRAPH_API_VERSION: v27.0
-          ACTION_NAME: ${{ github.event.inputs.action }}
+          ACTION_NAME: ${{ inputs.action }}
         run: |
           ACTION_NAME="${ACTION_NAME:-auto}"
           python free_runner.py --action "$ACTION_NAME"
@@ -63,3 +66,4 @@ jobs:
             git commit -m "Update automation status and post history"
             git push
           fi
+          
