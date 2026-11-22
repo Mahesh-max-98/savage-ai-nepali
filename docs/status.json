@@ -1,0 +1,12 @@
+{
+  "enabled": false,
+  "interval_minutes": 30,
+  "daily_limit": 8,
+  "last_published_at": null,
+  "last_status": "Not started",
+  "last_error": null,
+  "last_post_id": null,
+  "published_total": 0,
+  "recent_posts": [],
+  "updated_at": null
+}
