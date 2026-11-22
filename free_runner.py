@@ -54,7 +54,8 @@ def generate_one():
     now = datetime.now(timezone.utc)
     stamp = now.strftime("%Y%m%d-%H%M%S")
     slug = safe_slug(content["caption"])
-    image_name = f"{stamp}-{slug}.png"
+    image_ext = {"image/jpeg": "jpg", "image/webp": "webp", "image/gif": "gif"}.get(mime_type, "png")
+    image_name = f"{stamp}-{slug}.{image_ext}"
     text_name = f"{stamp}-{slug}.md"
     (OUTPUT_DIR / image_name).write_bytes(image_bytes)
 
