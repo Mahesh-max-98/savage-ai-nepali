@@ -48,6 +48,9 @@ def run_once():
 
         try:
             content = generate_caption()
+            from services.quality import validate_caption
+            previous = [p.caption for p in Post.query.filter(Post.id != post_id).order_by(Post.created_at.desc()).limit(100).all()]
+            validate_caption(content["caption"], previous)
             image_bytes, mime = generate_image(content["caption"])
             post = db.session.get(Post, post_id)
             post.caption = content["caption"]
