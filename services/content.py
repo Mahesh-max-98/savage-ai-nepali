@@ -111,9 +111,12 @@ Use 3–5 relevant hashtags. No markdown fences or extra text.
             ],
             "temperature": 1.0,
             "top_p": 0.96,
-            "max_tokens": 500,
+            "max_completion_tokens": 1400,
+            "reasoning_effort": "low",
+            "include_reasoning": false,
+            "response_format": {"type": "json_object"},
         },
-        timeout=60,
+        timeout=90,
     )
 
     if not response.ok:
