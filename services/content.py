@@ -51,7 +51,7 @@ The category for this post must be: {selected_category}.
     raw = re.sub(r"^\s*```(?:json)?|\s*```\s*$", "", raw.strip(), flags=re.IGNORECASE)
     result = json.loads(raw)
     caption = str(result.get("caption", "")).strip()
-    category = str(result.get("category", "relatable")).strip()[:80]
+    category = selected_category
     hashtags = result.get("hashtags", [])
     if not caption:
         raise RuntimeError("The text model returned an empty caption.")
@@ -62,6 +62,11 @@ The category for this post must be: {selected_category}.
         tag = re.sub(r"[^\w#]", "", str(tag), flags=re.UNICODE)
         if tag:
             clean_tags.append(tag if tag.startswith("#") else f"#{tag}")
+    while len(clean_tags) < 3:
+        fallback = ["#NepaliMemes", "#NepaliHumour", "#Funny", "#NepaliJokes"]
+        candidate = fallback[len(clean_tags)]
+        if candidate not in clean_tags:
+            clean_tags.append(candidate)
     return {
         "caption": caption[:1200],
         "category": category,
