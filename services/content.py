@@ -2,6 +2,7 @@ import json
 import os
 import re
 import requests
+import random
 
 CATEGORIES = [
     "savage", "friendship", "relationship", "breakup", "student", "money",
@@ -15,7 +16,8 @@ def generate_caption():
     if not api_key:
         raise RuntimeError("GROQ_API_KEY is missing. Add it in Render environment variables.")
 
-    prompt = """Create ONE original, short, funny Facebook meme caption for a Nepali humour page.
+    selected_category = random.choice(CATEGORIES)
+    prompt = f"""Create ONE original, short, funny Facebook meme caption for a Nepali humour page.
 Write mainly in natural Nepali or Nepanglish; occasionally English is okay.
 Tone: clever, punchy, savage level 8/10, but playful rather than cruel.
 Do not target protected groups, real private people, or encourage bullying.
