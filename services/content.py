@@ -14,7 +14,7 @@ CATEGORIES = [
 def generate_caption():
     api_key = os.getenv("GROQ_API_KEY")
     if not api_key:
-        raise RuntimeError("GROQ_API_KEY is missing. Add it in Render environment variables.")
+        raise RuntimeError("GROQ_API_KEY is missing. Add it as a GitHub Actions repository secret.")
 
     selected_category = random.choice(CATEGORIES)
     prompt = f"""Create ONE original, short, funny Facebook meme caption for a Nepali humour page.
