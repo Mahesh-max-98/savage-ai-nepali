@@ -12,7 +12,7 @@ MAX_ITEMS = 12
 
 
 def _clean(value):
-    return re.sub(r"\\s+", " ", (value or "")).strip()
+    return re.sub(r"\s+", " ", (value or "")).strip()
 
 
 def _fetch_rss(url, source, limit=6):
@@ -54,7 +54,7 @@ def get_trend_context():
     unique = []
     seen = set()
     for item in found:
-        key = re.sub(r"[^\\w]", "", item["title"].lower())
+        key = re.sub(r"[^\w]", "", item["title"].lower())
         if key and key not in seen:
             seen.add(key)
             unique.append(item)
