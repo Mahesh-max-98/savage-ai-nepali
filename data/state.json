@@ -3,7 +3,7 @@
   "interval_minutes": 30,
   "daily_limit": 8,
   "last_published_at": null,
-  "last_status": "Automation enabled",
-  "last_error": null,
+  "last_status": "Run failed",
+  "last_error": "Groq API error 404: {\"error\":{\"message\":\"The model `llama-3.3-70b-versatile` does not exist or you do not have access to it.\",\"type\":\"invalid_request_error\",\"code\":\"model_not_found\"}}\n",
   "last_post_id": null
 }
