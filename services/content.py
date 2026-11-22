@@ -24,8 +24,9 @@ Do not target protected groups, real private people, or encourage bullying.
 No slurs, threats, explicit sexual content, graphic violence, or jokes romanticizing self-harm.
 Avoid stale copied jokes and avoid repeating common viral templates.
 Return ONLY valid JSON with exactly these keys:
-{"category":"one short category","caption":"the full caption without hashtags","hashtags":["#tag1","#tag2","#tag3"]}
+{{"category":"one short category","caption":"the full caption without hashtags","hashtags":["#tag1","#tag2","#tag3"]}}
 Use 3 to 6 relevant hashtags. Keep the caption concise and readable on a phone.
+The category for this post must be: {selected_category}.
 """
 
     response = requests.post(
