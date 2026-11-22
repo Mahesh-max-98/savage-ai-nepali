@@ -4,6 +4,6 @@
   "daily_limit": 8,
   "last_published_at": null,
   "last_status": "Run failed",
-  "last_error": "Facebook Graph API error 403: {\"error\":{\"message\":\"(#200) This endpoint is deprecated since the required permission publish_actions is deprecated\",\"type\":\"OAuthException\",\"code\":200,\"fbtrace_id\":\"AYX91hUrVL_YB-6zmgR9DiN\"}}",
+  "last_error": "Groq did not return a JSON object: {\n  \"category\": \"family\",\n  \"caption\": \"आमाले भनिन्, “भाइको Wi‑Fi पासवर्ड: मम्मीको गुप्त रेसिपी”\",\n  \"hashtags\": [\"#FamilyDrama\", \"#NepaliMeme\", \"#Savage",
   "last_post_id": null
 }
