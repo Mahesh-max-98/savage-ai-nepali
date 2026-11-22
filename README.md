@@ -35,3 +35,10 @@ Each run adds:
 - An updated `generated/index.json` content history.
 
 Review jokes before posting. AI-generated content can occasionally need editing.
+
+
+## Live trend research
+
+Before writing a joke, the generator checks public Google Trends Nepal RSS and a Google News RSS search for Nepal/Nepali meme, comedy, viral and social-media topics. It uses headline topics as inspiration only, never as source text to copy. If the feeds are unavailable, it falls back to evergreen Nepali humour topics. Each generated entry records the trend status, topic headlines and source names for review.
+
+Trend feeds are best-effort and do not guarantee that a topic is popular on Facebook or TikTok. Google Trends measures search interest, not joke quality or social engagement.
