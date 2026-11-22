@@ -4,6 +4,6 @@
   "daily_limit": 8,
   "last_published_at": null,
   "last_status": "Run failed",
-  "last_error": "Groq API error 400: {\"error\":{\"message\":\"Failed to validate JSON. Please adjust your prompt. See 'failed_generation' for more details.\",\"type\":\"invalid_request_error\",\"code\":\"json_validate_failed\",\"failed_generation\":\"\"}}\n",
+  "last_error": "Facebook Graph API error 400: {\"error\":{\"message\":\"Invalid OAuth access token - Cannot parse access token\",\"type\":\"OAuthException\",\"code\":190,\"fbtrace_id\":\"Al7saKgZUREOj6AwzNHVbKR\"}}",
   "last_post_id": null
 }
