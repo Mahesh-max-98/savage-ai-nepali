@@ -185,6 +185,9 @@ def create_app():
         from services.image import generate_image
         try:
             content = generate_caption()
+            from services.quality import validate_caption
+            previous = [p.caption for p in Post.query.order_by(Post.created_at.desc()).limit(100).all()]
+            validate_caption(content["caption"], previous)
             image_bytes, mime = generate_image(content["caption"])
             post = Post(
                 caption=content["caption"],
