@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Savage AI Nepali · Dashboard</title>
+<style>
+:root{color-scheme:dark;--bg:#0b0d12;--panel:#151a24;--line:#2b3442;--text:#f4f5f7;--muted:#9ba5b4;--lime:#c7f36b}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at 70% 0,#202b35 0,transparent 48%),var(--bg);color:var(--text);font:15px system-ui,sans-serif}.wrap{max-width:980px;margin:auto;padding:35px 20px}.head{display:flex;align-items:center;justify-content:space-between;gap:20px}.brand{display:flex;align-items:center;gap:12px;font-weight:800;letter-spacing:1px}.logo{width:42px;height:42px;border-radius:12px;background:var(--lime);color:#111;display:grid;place-items:center}.muted{color:var(--muted)}h1{font-size:clamp(30px,6vw,52px);letter-spacing:-2px;margin:42px 0 8px}.sub{color:var(--muted);max-width:600px;line-height:1.6}.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:13px;margin:28px 0}.card{background:var(--panel);border:1px solid var(--line);border-radius:15px;padding:20px}.k{color:var(--muted);font-size:12px}.v{font-size:25px;font-weight:750;margin-top:8px}.status{display:inline-flex;align-items:center;gap:8px;border:1px solid var(--line);border-radius:30px;padding:7px 11px;font-size:12px}.dot{width:8px;height:8px;border-radius:50%;background:#8b94a3}.on .dot{background:var(--lime)}.actions{display:flex;flex-wrap:wrap;gap:10px;margin:20px 0 30px}.btn{display:inline-block;text-decoration:none;border-radius:9px;padding:12px 16px;background:var(--lime);color:#111;font-weight:750;font-size:13px}.btn.secondary{background:#252d3a;color:#edf1f6;border:1px solid #3b4656}.post{padding:16px 0;border-top:1px solid var(--line)}.post b{display:block;margin-bottom:7px}.post small{color:var(--muted)}.note{font-size:12px;color:var(--muted);line-height:1.7;margin-top:26px}@media(max-width:650px){.grid{grid-template-columns:1fr}.head{align-items:flex-start;flex-direction:column}}
+</style>
+</head>
+<body><main class="wrap">
+<header class="head"><div class="brand"><span class="logo">SA</span><span>SAVAGE AI NEPALI<br><small class="muted">CREATOR CONTROL ROOM</small></span></div><span class="status" id="state"><i class="dot"></i><span>Loading status…</span></span></header>
+<h1>Your humour engine.</h1><p class="sub">Original Nepali and Nepanglish jokes, matching meme artwork, and Facebook Page publishing — built around free GitHub Actions scheduling.</p>
+<section class="grid">
+<div class="card"><div class="k">AUTOMATION</div><div class="v" id="enabled">Loading</div></div>
+<div class="card"><div class="k">TOTAL POSTS</div><div class="v" id="total">—</div></div>
+<div class="card"><div class="k">SCHEDULE</div><div class="v" id="interval">Every 30 min</div></div>
+</section>
+<div class="actions"><a class="btn" href="https://github.com/Mahesh-max-98/savage-ai-nepali/actions/workflows/auto-post.yml">Open automation controls ↗</a><a class="btn secondary" href="https://github.com/Mahesh-max-98/savage-ai-nepali">View project on GitHub</a></div>
+<section class="card"><h2 style="font-size:17px;margin-top:0">Recent posts</h2><div id="posts" class="muted">Loading history…</div></section>
+<p class="note">This is a public, read-only dashboard. Use the GitHub Actions controls to enable, pause, or publish now. Never put API keys or Page tokens in this website or in source files. Scheduled runs can be delayed by GitHub and are not guaranteed to execute at the exact minute.</p>
+</main>
+<script>
+fetch('./status.json?'+Date.now()).then(r=>r.json()).then(s=>{
+const enabled=!!s.enabled;document.getElementById('enabled').textContent=enabled?'Running':'Paused';document.getElementById('total').textContent=s.published_total??0;document.getElementById('interval').textContent='Every '+(s.interval_minutes||30)+' min';
+const badge=document.getElementById('state');badge.className='status '+(enabled?'on':'');badge.innerHTML='<i class="dot"></i><span>'+(enabled?'AUTOMATION ACTIVE':'AUTOMATION PAUSED')+'</span>';
+const posts=document.getElementById('posts');if(!s.recent_posts||!s.recent_posts.length){posts.textContent=s.last_error||'No posts published yet.';return;}posts.innerHTML=s.recent_posts.map(p=>'<article class="post"><b>'+escapeHtml(p.caption||'')+'</b><small>'+escapeHtml(p.category||'')+' · '+escapeHtml(p.published_at||'')+'</small></article>').join('');
+}).catch(()=>document.getElementById('posts').textContent='Status is not available yet.');
+function escapeHtml(v){return String(v).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+</script></body></html>
