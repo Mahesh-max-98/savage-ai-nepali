@@ -51,6 +51,9 @@ def create_app():
         SQLALCHEMY_TRACK_MODIFICATIONS=False,
         MAX_CONTENT_LENGTH=12 * 1024 * 1024,
         WTF_CSRF_TIME_LIMIT=None,
+        SESSION_COOKIE_HTTPONLY=True,
+        SESSION_COOKIE_SAMESITE="Lax",
+        SESSION_COOKIE_SECURE=bool(os.getenv("RENDER_EXTERNAL_HOSTNAME")),
     )
     db.init_app(app)
     csrf.init_app(app)
