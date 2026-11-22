@@ -48,3 +48,8 @@ Run the workflow with the `status` action to view how many jokes have been gener
 - The image endpoint is best-effort; if unavailable, the project creates a local poster.
 - Review AI-generated content before posting.
 - No Facebook publishing, Facebook token, or automatic posting schedule is included.
+
+
+## Live trend research
+
+The generator checks public Google Trends Nepal and Google News RSS feeds before creating a joke. It extracts headline topics only and asks the model to write a completely original Nepali/Nepanglish joke. Existing jokes, captions and punchlines are not copied. If live feeds fail, generation continues using general Nepali humour themes. Trend topics and feed status are saved with each generated item.
