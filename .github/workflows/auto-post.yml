@@ -66,4 +66,3 @@ jobs:
             git commit -m "Update automation status and post history"
             git push
           fi
-          
