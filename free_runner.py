@@ -77,6 +77,12 @@ def generate_one():
         "text_file": text_name,
         "image_file": image_name,
         "image_mime_type": mime_type,
+        "trend_status": content.get("trend_context", {}).get("status", "not recorded"),
+        "trend_topics": [
+            item.get("title", "")
+            for item in content.get("trend_context", {}).get("items", [])
+        ],
+        "trend_sources": content.get("trend_context", {}).get("sources_checked", []),
     }
     history.append(record)
     INDEX_FILE.write_text(
