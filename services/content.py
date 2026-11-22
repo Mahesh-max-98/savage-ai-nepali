@@ -113,7 +113,7 @@ Use 3–5 relevant hashtags. No markdown fences or extra text.
             "top_p": 0.96,
             "max_completion_tokens": 1400,
             "reasoning_effort": "low",
-            "include_reasoning": false,
+            "include_reasoning": False,
             "response_format": {"type": "json_object"},
         },
         timeout=90,
