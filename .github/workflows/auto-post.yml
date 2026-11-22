@@ -1,0 +1,64 @@
+name: Savage AI Nepali · Free Auto Publisher
+
+on:
+  schedule:
+    - cron: "15,45 * * * *"
+  workflow_dispatch:
+    inputs:
+      action:
+        description: "Choose what the automation should do"
+        required: true
+        type: choice
+        default: status
+        options:
+          - enable
+          - pause
+          - publish_now
+          - status
+
+permissions:
+  contents: write
+
+concurrency:
+  group: savage-ai-publisher
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install lightweight dependencies
+        run: pip install -r requirements-free.txt
+
+      - name: Run automation
+        env:
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+          GROQ_MODEL: llama-3.3-70b-versatile
+          FACEBOOK_PAGE_ID: ${{ secrets.FACEBOOK_PAGE_ID }}
+          FACEBOOK_PAGE_ACCESS_TOKEN: ${{ secrets.FACEBOOK_PAGE_ACCESS_TOKEN }}
+          META_GRAPH_API_VERSION: v27.0
+          ACTION_NAME: ${{ github.event.inputs.action }}
+        run: |
+          ACTION_NAME="${ACTION_NAME:-auto}"
+          python free_runner.py --action "$ACTION_NAME"
+
+      - name: Save status and posting history
+        run: |
+          git config user.name "savage-ai-bot"
+          git config user.email "savage-ai-bot@users.noreply.github.com"
+          git add data/state.json data/history.json docs/status.json
+          if ! git diff --cached --quiet; then
+            git commit -m "Update automation status and post history"
+            git push
+          fi
