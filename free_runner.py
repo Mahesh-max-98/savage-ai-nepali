@@ -1,138 +1,107 @@
 import argparse
 import json
 import os
+import re
 import sys
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timezone
 from pathlib import Path
 
 from services.content import generate_caption
-from services.facebook import publish_photo
 from services.image import generate_image
 from services.quality import validate_caption
 
 ROOT = Path(__file__).parent
-DATA = ROOT / "data"
-STATE_FILE = DATA / "state.json"
-HISTORY_FILE = DATA / "history.json"
-STATUS_FILE = ROOT / "docs" / "status.json"
-
-DEFAULT_STATE = {
-    "enabled": False,
-    "interval_minutes": 30,
-    "daily_limit": 8,
-    "last_published_at": None,
-    "last_status": "Not started",
-    "last_error": None,
-    "last_post_id": None,
-}
+OUTPUT_DIR = ROOT / "generated"
+INDEX_FILE = OUTPUT_DIR / "index.json"
 
 
-def now_utc():
-    return datetime.now(timezone.utc)
-
-
-def read_json(path, fallback):
-    if not path.exists():
-        return fallback
+def read_index():
+    if not INDEX_FILE.exists():
+        return []
     try:
-        return json.loads(path.read_text(encoding="utf-8"))
-    except (json.JSONDecodeError, OSError):
-        return fallback
+        data = json.loads(INDEX_FILE.read_text(encoding="utf-8"))
+        return data if isinstance(data, list) else []
+    except (OSError, json.JSONDecodeError):
+        return []
 
 
-def write_json(path, value):
-    path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(value, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+def safe_slug(value):
+    slug = re.sub(r"[^a-zA-Z0-9-]+", "-", value).strip("-").lower()
+    return (slug[:42] or "nepali-joke")
 
 
-def publish_one(state, history, force=False):
+def generate_one():
     if not os.getenv("GROQ_API_KEY"):
         raise RuntimeError("Missing GROQ_API_KEY GitHub Actions secret.")
-    if not os.getenv("FACEBOOK_PAGE_ID") or not os.getenv("FACEBOOK_PAGE_ACCESS_TOKEN"):
-        raise RuntimeError("Missing FACEBOOK_PAGE_ID or FACEBOOK_PAGE_ACCESS_TOKEN GitHub Actions secret.")
 
-    now = now_utc()
-    today = now.date().isoformat()
-    posted_today = sum(1 for item in history if item.get("published_at", "").startswith(today))
-    daily_limit = max(1, min(48, int(state.get("daily_limit", 8))))
-    if posted_today >= daily_limit:
-        state["last_status"] = "Daily limit reached"
-        print(f"Daily limit ({daily_limit}) reached.")
-        return
+    OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
+    history = read_index()
+    recent = [item.get("caption", "") for item in history[-100:]]
 
-    interval = max(30, min(1440, int(state.get("interval_minutes", 30))))
-    last = state.get("last_published_at")
-    if not force and last:
-        last_dt = datetime.fromisoformat(last.replace("Z", "+00:00"))
-        if now < last_dt + timedelta(minutes=interval):
-            print("Not due yet; skipping this scheduled run.")
-            return
+    # Retry a few times if the model repeats a recent joke.
+    last_error = None
+    for _ in range(4):
+        content = generate_caption()
+        try:
+            validate_caption(content["caption"], recent)
+            break
+        except ValueError as exc:
+            last_error = exc
+    else:
+        raise RuntimeError(f"Could not generate a fresh joke after 4 attempts: {last_error}")
 
-    content = generate_caption()
-    validate_caption(content["caption"], [p.get("caption", "") for p in history[-100:]])
-    image_bytes, mime = generate_image(content["caption"])
-    message = content["caption"] + "\n\n" + " ".join(content.get("hashtags", []))
-    facebook_id = publish_photo(message, image_bytes, mime)
+    image_bytes, mime_type = generate_image(content["caption"])
+    now = datetime.now(timezone.utc)
+    stamp = now.strftime("%Y%m%d-%H%M%S")
+    slug = safe_slug(content["caption"])
+    image_name = f"{stamp}-{slug}.png"
+    text_name = f"{stamp}-{slug}.md"
+    (OUTPUT_DIR / image_name).write_bytes(image_bytes)
 
-    item = {
-        "facebook_post_id": facebook_id,
+    hashtags = content.get("hashtags", [])
+    text = (
+        f"# {content.get('category', 'Nepali humour').title()}\n\n"
+        f"{content['caption']}\n\n"
+        f"{' '.join(hashtags)}\n\n"
+        f"**Generated:** {now.strftime('%Y-%m-%d %H:%M UTC')}\n"
+        f"**Meme image:** [{image_name}]({image_name})\n"
+    )
+    (OUTPUT_DIR / text_name).write_text(text, encoding="utf-8")
+
+    record = {
+        "generated_at": now.isoformat(),
+        "category": content.get("category", "Nepali humour"),
         "caption": content["caption"],
-        "category": content["category"],
-        "hashtags": content.get("hashtags", []),
-        "published_at": now.isoformat(),
-        "image_source": "free AI image endpoint with local poster fallback",
+        "hashtags": hashtags,
+        "text_file": text_name,
+        "image_file": image_name,
+        "image_mime_type": mime_type,
     }
-    history.append(item)
-    state["last_published_at"] = now.isoformat()
-    state["last_status"] = "Published successfully"
-    state["last_error"] = None
-    state["last_post_id"] = facebook_id
-    print(f"Published Facebook post {facebook_id}")
+    history.append(record)
+    INDEX_FILE.write_text(
+        json.dumps(history[-500:], ensure_ascii=False, indent=2) + "\n",
+        encoding="utf-8",
+    )
+    print("Joke and meme image created successfully.")
+    print(f"Caption: {content['caption']}")
+    print(f"Text file: generated/{text_name}")
+    print(f"Image file: generated/{image_name}")
 
 
 def main():
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--action", default="auto", choices=["auto", "enable", "pause", "publish_now", "status"])
+    parser = argparse.ArgumentParser(description="Create original Nepali jokes and meme images.")
+    parser.add_argument("--action", choices=["generate", "status"], default="generate")
     args = parser.parse_args()
 
-    state = read_json(STATE_FILE, DEFAULT_STATE.copy())
-    history = read_json(HISTORY_FILE, [])
-    if not isinstance(history, list):
-        history = []
-
-    if args.action == "enable":
-        state["enabled"] = True
-        state["last_status"] = "Automation enabled"
-        state["last_error"] = None
-        print("Automation enabled.")
-    elif args.action == "pause":
-        state["enabled"] = False
-        state["last_status"] = "Automation paused"
-        print("Automation paused.")
-    elif args.action == "status":
-        print(json.dumps({"state": state, "recent_posts": history[-5:]}, ensure_ascii=False, indent=2))
-    elif args.action == "publish_now":
-        publish_one(state, history, force=True)
-    elif args.action == "auto":
-        if state.get("enabled"):
-            publish_one(state, history)
-        else:
-            print("Automation is paused; no post published.")
-
-    write_json(STATE_FILE, state)
-    write_json(HISTORY_FILE, history[-500:])
-    write_json(STATUS_FILE, {
-        "enabled": bool(state.get("enabled")),
-        "interval_minutes": int(state.get("interval_minutes", 30)),
-        "daily_limit": int(state.get("daily_limit", 8)),
-        "last_published_at": state.get("last_published_at"),
-        "last_status": state.get("last_status"),
-        "last_error": state.get("last_error"),
-        "last_post_id": state.get("last_post_id"),
-        "published_total": len(history),
-        "recent_posts": history[-10:][::-1],
-        "updated_at": now_utc().isoformat(),
-    })
+    if args.action == "generate":
+        generate_one()
+    else:
+        history = read_index()
+        print(json.dumps({
+            "total_created": len(history),
+            "latest_items": history[-10:][::-1],
+            "publishing": "Manual only — this project does not publish to Facebook.",
+        }, ensure_ascii=False, indent=2))
 
 
 if __name__ == "__main__":
@@ -140,19 +109,4 @@ if __name__ == "__main__":
         main()
     except Exception as exc:
         print(f"ERROR: {exc}", file=sys.stderr)
-        state = read_json(STATE_FILE, DEFAULT_STATE.copy())
-        state["last_status"] = "Run failed"
-        state["last_error"] = str(exc)[:500]
-        write_json(STATE_FILE, state)
-        write_json(STATUS_FILE, {
-            "enabled": bool(state.get("enabled")),
-            "interval_minutes": int(state.get("interval_minutes", 30)),
-            "daily_limit": int(state.get("daily_limit", 8)),
-            "last_published_at": state.get("last_published_at"),
-            "last_status": state.get("last_status"),
-            "last_error": state.get("last_error"),
-            "published_total": len(read_json(HISTORY_FILE, [])),
-            "recent_posts": read_json(HISTORY_FILE, [])[-10:][::-1],
-            "updated_at": now_utc().isoformat(),
-        })
         raise
