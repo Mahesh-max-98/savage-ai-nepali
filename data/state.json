@@ -4,6 +4,6 @@
   "daily_limit": 8,
   "last_published_at": null,
   "last_status": "Run failed",
-  "last_error": "Facebook Graph API error 400: {\"error\":{\"message\":\"Invalid OAuth access token - Cannot parse access token\",\"type\":\"OAuthException\",\"code\":190,\"fbtrace_id\":\"Al7saKgZUREOj6AwzNHVbKR\"}}",
+  "last_error": "Facebook Graph API error 400: {\"error\":{\"message\":\"Unsupported post request. Object with ID '4dfbd8a29c3c41687f203e82f227cf4e' does not exist, cannot be loaded due to missing permissions, or does not support this operation. Please read the Graph API documentation at https:\\/\\/developers.facebook.com\\/docs\\/graph-api\",\"type\":\"GraphMethodException\",\"code\":100,\"error_subcode\":33,\"fbtrace_id\":\"Afi4jatF6j52_Pl6prwovHN\"}}",
   "last_post_id": null
 }
