@@ -125,7 +125,17 @@ Use 3–5 relevant hashtags. No markdown fences or extra text.
         )
 
     data = response.json()
-    raw = (data["choices"][0]["message"].get("content") or "").strip()
+    choice = (data.get("choices") or [{}])[0]
+    message = choice.get("message") or {}
+    raw = (message.get("content") or "").strip()
+    if not raw:
+        finish_reason = choice.get("finish_reason", "unknown")
+        usage = data.get("usage", {})
+        raise RuntimeError(
+            "Groq returned empty message.content "
+            f"(finish_reason={finish_reason}, usage={usage}). "
+            "Try again; if this repeats, check the selected Groq model."
+        )
     raw = re.sub(r"^\s*```(?:json)?\s*|\s*```\s*$", "", raw, flags=re.IGNORECASE).strip()
     start, end = raw.find("{"), raw.rfind("}")
     if start < 0 or end < start:
