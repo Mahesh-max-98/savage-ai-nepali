@@ -1,9 +1,9 @@
 {
-  "enabled": false,
+  "enabled": true,
   "interval_minutes": 30,
   "daily_limit": 8,
   "last_published_at": null,
-  "last_status": "Not started",
+  "last_status": "Automation enabled",
   "last_error": null,
   "last_post_id": null
 }

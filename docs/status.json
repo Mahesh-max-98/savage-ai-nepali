@@ -1,12 +1,12 @@
 {
-  "enabled": false,
+  "enabled": true,
   "interval_minutes": 30,
   "daily_limit": 8,
   "last_published_at": null,
-  "last_status": "Not started",
+  "last_status": "Automation enabled",
   "last_error": null,
   "last_post_id": null,
   "published_total": 0,
   "recent_posts": [],
-  "updated_at": "2026-11-22T13:58:59.085258+00:00"
+  "updated_at": "2026-11-22T14:42:26.695298+00:00"
 }
