@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Savage AI · Sign in</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body class="login-page">
+  <main class="login-card">
+    <div class="brand-mark">SA</div>
+    <p class="eyebrow">NEPALI HUMOUR STUDIO</p>
+    <h1>Welcome back.</h1>
+    <p class="muted">Sign in to manage your content automation dashboard.</p>
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% for category, message in messages %}<div class="notice {{ category }}">{{ message }}</div>{% endfor %}
+    {% endwith %}
+    <form method="post">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <label for="password">Dashboard password</label>
+      <input id="password" name="password" type="password" required autocomplete="current-password" placeholder="Enter your password">
+      <button class="primary full" type="submit">Sign in <span>→</span></button>
+    </form>
+    <p class="tiny">Your dashboard password is configured privately in Render environment variables.</p>
+  </main>
+</body>
+</html>
