@@ -1,69 +1,58 @@
-
-name: Savage AI Nepali · Free Auto Publisher
+name: Savage AI Nepali · Joke & Meme Creator
 
 on:
-  schedule:
-    - cron: "15,45 * * * *"
-
   workflow_dispatch:
     inputs:
       action:
-        description: "Choose what the automation should do"
+        description: "Choose what to do"
         required: true
         type: choice
-        default: enable
+        default: generate
         options:
-          - enable
-          - pause
-          - publish_now
+          - generate
           - status
 
 permissions:
   contents: write
 
 concurrency:
-  group: savage-ai-publisher
+  group: savage-ai-content-creator
   cancel-in-progress: false
 
 jobs:
-  publish:
+  create-content:
     runs-on: ubuntu-latest
     timeout-minutes: 5
-
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
-        with:
-          persist-credentials: true
 
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: "3.12"
 
-      - name: Install lightweight dependencies
+      - name: Install dependencies
         run: pip install -r requirements-free.txt
 
-      - name: Run automation
+      - name: Generate Nepali joke and meme image
+        if: inputs.action == 'generate'
         env:
           GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
           GROQ_MODEL: openai/gpt-oss-120b
-          
-          FACEBOOK_PAGE_ID: ${{ secrets.FACEBOOK_PAGE_ID }}
-          FACEBOOK_PAGE_ACCESS_TOKEN: ${{ secrets.FACEBOOK_PAGE_ACCESS_TOKEN }}
-          META_GRAPH_API_VERSION: v27.0
-          ACTION_NAME: ${{ inputs.action }}
-        run: |
-          ACTION_NAME="${ACTION_NAME:-auto}"
-          python free_runner.py --action "$ACTION_NAME"
+        run: python free_runner.py --action generate
 
-      - name: Save status and posting history
-        if: always()
+      - name: Show content library status
+        if: inputs.action == 'status'
+        run: python free_runner.py --action status
+
+      - name: Save generated content to repository
+        if: inputs.action == 'generate'
         run: |
-          git config user.name "savage-ai-bot"
-          git config user.email "savage-ai-bot@users.noreply.github.com"
-          git add data/state.json data/history.json docs/status.json
+          git config user.name "savage-ai-content-bot"
+          git config user.email "savage-ai-content-bot@users.noreply.github.com"
+          git add generated/
           if ! git diff --cached --quiet; then
-            git commit -m "Update automation status and post history"
+            git commit -m "Add new Nepali joke and meme"
             git push
           fi
