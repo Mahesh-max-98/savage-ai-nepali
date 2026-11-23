@@ -18,7 +18,7 @@ FEEDS = [
 def _value(node, tag):
     item=node.find(tag)
     if item is None: return ""
-    return re.sub(r"\\s+"," ",html.unescape(re.sub(r"<[^>]+>"," ",item.text or ""))).strip()
+    return re.sub(r"\s+"," ",html.unescape(re.sub(r"<[^>]+>"," ",item.text or ""))).strip()
 
 def _date(value):
     try:
@@ -72,4 +72,4 @@ JSON मात्र: {{"postable":true,"text":"शीर्षक\\nसमा�
     except json.JSONDecodeError as exc: raise RuntimeError("AI returned invalid news JSON.") from exc
     lines=[x.strip() for x in str(result.get("text","")).splitlines() if x.strip()]
     if not result.get("postable") or not 3<=len(lines)<=8 or not lines[-1].lower().startswith("स्रोत:"): return None
-    return "\\n".join(lines)
+    return "\n".join(lines)
