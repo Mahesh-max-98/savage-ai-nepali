@@ -1,0 +1,45 @@
+name: Savage AI Nepali - News Monitor
+on:
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "true = create drafts only; false = publish text-only posts"
+        required: true
+        type: choice
+        default: "true"
+        options: ["true", "false"]
+  schedule:
+    - cron: "*/30 * * * *"
+permissions:
+  contents: write
+concurrency:
+  group: savage-ai-news-monitor
+  cancel-in-progress: false
+jobs:
+  monitor-news:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -r requirements-free.txt
+      - name: Collect and summarize news
+        env:
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+          GROQ_MODEL: openai/gpt-oss-120b
+          FACEBOOK_PAGE_ID: ${{ secrets.FACEBOOK_PAGE_ID }}
+          FACEBOOK_PAGE_ACCESS_TOKEN: ${{ secrets.FACEBOOK_PAGE_ACCESS_TOKEN }}
+          NEWS_DRY_RUN: ${{ github.event_name == 'workflow_dispatch' && inputs.dry_run || 'true' }}
+          NEWS_MAX_POSTS_PER_RUN: "2"
+        run: python news_runner.py
+      - name: Save news history
+        run: |
+          git config user.name "savage-ai-news-bot"
+          git config user.email "savage-ai-news-bot@users.noreply.github.com"
+          git add generated/news_index.json
+          if ! git diff --cached --quiet; then
+            git commit -m "Update Nepali news monitoring history"
+            git push
+          fi
