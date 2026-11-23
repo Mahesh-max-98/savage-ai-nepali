@@ -16,7 +16,8 @@ def load_history():
 
 def main():
     OUT.mkdir(exist_ok=True); history=load_history()
-    stories,feed_status=collect_news()\n    stories=stories[:max(1,min(12,int(os.getenv("NEWS_MAX_STORIES_PER_RUN","6"))))]
+    stories,feed_status=collect_news()
+    stories=stories[:max(1,min(12,int(os.getenv("NEWS_MAX_STORIES_PER_RUN","6"))))]
     limit=max(1,min(5,int(os.getenv("NEWS_MAX_POSTS_PER_RUN","2"))))
     dry_run=os.getenv("NEWS_DRY_RUN","true").lower()!="false"
     published=0
