@@ -25,6 +25,8 @@ jobs:
         with:
           python-version: "3.12"
       - run: pip install -r requirements-free.txt
+      - name: Check Python syntax
+        run: python -m py_compile news_runner.py services/news.py services/facebook.py
       - name: Collect and summarize news
         env:
           GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
