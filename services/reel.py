@@ -1,11 +1,14 @@
 """Create vertical MP4 reels from generated Nepali meme images."""
 import json
+import math
 import shutil
 import subprocess
-import textwrap
+import tempfile
 from pathlib import Path
 
 from PIL import Image, ImageDraw, ImageFilter, ImageFont, ImageOps
+
+from services.voice import DEFAULT_VOICE, create_speech
 
 ROOT = Path(__file__).resolve().parents[1]
 REELS_DIR = ROOT / "reels"
@@ -13,7 +16,7 @@ READY_DIR = REELS_DIR / "ready"
 CAPTIONS_DIR = REELS_DIR / "captions"
 INDEX_FILE = REELS_DIR / "index.json"
 WIDTH, HEIGHT = 1080, 1920
-DURATION = 8
+BASE_DURATION = 8
 FPS = 30
 
 
@@ -50,13 +53,11 @@ def _wrap_text(draw, text, font, max_width):
 
 def _make_vertical_poster(image_path, caption, output_path):
     source = Image.open(image_path).convert("RGB")
-    # Blurred full-screen background fills the 9:16 canvas.
     bg = ImageOps.fit(source, (WIDTH, HEIGHT), method=Image.Resampling.LANCZOS)
     bg = bg.filter(ImageFilter.GaussianBlur(38))
     bg = Image.blend(bg, Image.new("RGB", bg.size, (12, 13, 20)), 0.48)
     canvas = bg.convert("RGBA")
 
-    # Keep the complete original meme visible in the middle.
     foreground = ImageOps.contain(source, (WIDTH - 80, 1120), method=Image.Resampling.LANCZOS)
     x = (WIDTH - foreground.width) // 2
     y = 330 + (1120 - foreground.height) // 2
@@ -76,7 +77,6 @@ def _make_vertical_poster(image_path, caption, output_path):
     draw.rounded_rectangle((54, 70, WIDTH - 54, 235), radius=38, fill=(255, 211, 0, 242))
     draw.text((WIDTH // 2, 151), "नेपाली हाँसो 😂", font=title_font, fill=(20, 20, 20), anchor="mm")
 
-    # Caption is shown below the image; the original meme itself stays unobstructed.
     lines = _wrap_text(draw, caption, caption_font, WIDTH - 150)[:4]
     line_height = 76
     block_height = len(lines) * line_height + 60
@@ -88,39 +88,84 @@ def _make_vertical_poster(image_path, caption, output_path):
     canvas.convert("RGB").save(output_path, quality=95)
 
 
-def create_reel(image_path, caption, output_path, music_path=None):
+def _probe_duration(ffprobe, audio_path):
+    result = subprocess.run(
+        [ffprobe, "-v", "error", "-show_entries", "format=duration",
+         "-of", "default=noprint_wrappers=1:nokey=1", str(audio_path)],
+        check=True, capture_output=True, text=True,
+    )
+    return float(result.stdout.strip())
+
+
+def create_reel(image_path, caption, output_path, music_path=None,
+                voice_enabled=True, voice=DEFAULT_VOICE):
     ffmpeg = shutil.which("ffmpeg")
-    if not ffmpeg:
-        raise RuntimeError("ffmpeg is required. Install it with: sudo apt-get install ffmpeg")
+    ffprobe = shutil.which("ffprobe")
+    if not ffmpeg or not ffprobe:
+        raise RuntimeError("FFmpeg and ffprobe are required to create reels.")
     image_path = Path(image_path)
     output_path = Path(output_path)
     output_path.parent.mkdir(parents=True, exist_ok=True)
     poster_path = output_path.with_suffix(".poster.jpg")
     _make_vertical_poster(image_path, caption, poster_path)
 
-    video_filter = (
-        "zoompan=z='min(zoom+0.00035,1.08)':"
-        "x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':"
-        f"d={DURATION * FPS}:s={WIDTH}x{HEIGHT}:fps={FPS},"
-        "format=yuv420p"
-    )
-    command = [
-        ffmpeg, "-y", "-loop", "1", "-i", str(poster_path),
-        "-vf", video_filter, "-t", str(DURATION), "-r", str(FPS),
-        "-c:v", "libx264", "-preset", "veryfast", "-crf", "23",
-        "-pix_fmt", "yuv420p",
-    ]
-    if music_path and Path(music_path).exists():
+    temp_dir = tempfile.TemporaryDirectory(prefix="savage-reel-")
+    try:
+        audio_path = None
+        duration = float(BASE_DURATION)
+        if voice_enabled:
+            audio_path = create_speech(caption, Path(temp_dir.name) / "narration.mp3", voice)
+            duration = max(float(BASE_DURATION), _probe_duration(ffprobe, audio_path) + 0.55)
+
+        frames = math.ceil(duration * FPS)
+        video_filter = (
+            "zoompan=z='min(zoom+0.00035,1.08)':"
+            "x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':"
+            f"d={frames}:s={WIDTH}x{HEIGHT}:fps={FPS},format=yuv420p"
+        )
+        command = [ffmpeg, "-y", "-loop", "1", "-i", str(poster_path)]
+        if audio_path:
+            command += ["-i", str(audio_path)]
+        if music_path and Path(music_path).exists():
+            command += ["-stream_loop", "-1", "-i", str(music_path)]
+
         command += [
-            "-stream_loop", "-1", "-i", str(music_path),
-            "-af", f"volume=0.18,afade=t=out:st={DURATION-1}:d=1",
-            "-shortest", "-c:a", "aac", "-b:a", "128k",
+            "-vf", video_filter, "-t", f"{duration:.2f}", "-r", str(FPS),
+            "-c:v", "libx264", "-preset", "veryfast", "-crf", "23",
+            "-pix_fmt", "yuv420p",
         ]
-    else:
-        command += ["-an"]
-    command += ["-movflags", "+faststart", str(output_path)]
-    subprocess.run(command, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    poster_path.unlink(missing_ok=True)
+
+        if audio_path and music_path and Path(music_path).exists():
+            fade_start = max(0.0, duration - 1.0)
+            command += [
+                "-filter_complex",
+                f"[1:a]volume=1.0[voice];[2:a]volume=0.12[music];"
+                f"[voice][music]amix=inputs=2:duration=first:dropout_transition=2,"
+                f"afade=t=out:st={fade_start:.2f}:d=0.8[audio]",
+                "-map", "0:v:0", "-map", "[audio]", "-c:a", "aac", "-b:a", "128k",
+            ]
+        elif audio_path:
+            fade_start = max(0.0, duration - 0.8)
+            command += [
+                "-map", "0:v:0", "-map", "1:a:0",
+                "-af", f"apad=pad_dur=0.55,afade=t=out:st={fade_start:.2f}:d=0.5",
+                "-c:a", "aac", "-b:a", "128k",
+            ]
+        elif music_path and Path(music_path).exists():
+            command += [
+                "-map", "0:v:0", "-map", "1:a:0",
+                "-af", f"volume=0.18,afade=t=out:st={max(0.0, duration-1):.2f}:d=0.8",
+                "-c:a", "aac", "-b:a", "128k",
+            ]
+        else:
+            command += ["-an"]
+
+        command += ["-movflags", "+faststart", str(output_path)]
+        subprocess.run(command, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    finally:
+        temp_dir.cleanup()
+        poster_path.unlink(missing_ok=True)
+
     return output_path
 
 
