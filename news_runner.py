@@ -22,7 +22,18 @@ def main():
     dry_run=os.getenv("NEWS_DRY_RUN","true").lower()!="false"
     published=0
     for story in stories:
-        if story["id"] in history["processed"]: continue
+        existing=history["processed"].get(story["id"])
+        if existing:
+            if existing.get("status")=="draft" and not dry_run and published<limit and existing.get("brief"):
+                try:
+                    fb_id=publish_text(existing["brief"])
+                    existing["status"]="published"
+                    existing["facebook_post_id"]=fb_id
+                    existing["published_at"]=datetime.now(timezone.utc).isoformat()
+                    published+=1
+                except Exception as exc:
+                    print("[PUBLISH ERROR] "+story["source"]+": "+str(exc))
+            continue
         try:
             brief=create_news_brief(story)
             if not brief:
