@@ -1,4 +1,4 @@
-"""Convert generated meme images into vertical Facebook-ready MP4 reels."""
+"""Convert generated meme images into vertical Facebook-ready reels."""
 import argparse
 import json
 import re
@@ -6,6 +6,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 from services.reel import CAPTIONS_DIR, INDEX_FILE, READY_DIR, create_reel, read_reel_index
+from services.voice import DEFAULT_VOICE
 
 ROOT = Path(__file__).parent
 GENERATED_DIR = ROOT / "generated"
@@ -30,12 +31,14 @@ def main():
     parser.add_argument("--all", action="store_true", help="Process every unprocessed generated meme.")
     parser.add_argument("--image", help="Optional path to one image; uses the matching caption from index when available.")
     parser.add_argument("--music", help="Optional path to music you own or are licensed to use.")
+    parser.add_argument("--voice", default=DEFAULT_VOICE, help="Nepali narration voice (default: female Hemkala).")
+    parser.add_argument("--no-voice", action="store_true", help="Create a silent reel or music-only reel.")
     args = parser.parse_args()
 
     READY_DIR.mkdir(parents=True, exist_ok=True)
     CAPTIONS_DIR.mkdir(parents=True, exist_ok=True)
     history = read_reel_index()
-    done = {item.get("image_file") for item in history}
+    done = {item.get("source_image", item.get("image_file")) for item in history}
     generated = load_generated()
 
     if args.image:
@@ -44,7 +47,7 @@ def main():
             target = ROOT / target
         matches = [item for item in generated if item.get("image_file") == target.name]
         caption = matches[-1].get("caption", "") if matches else target.stem.replace("-", " ")
-        candidates = [{"image_file": target.name, "caption": caption, "generated_at": ""}]
+        candidates = [{"image_file": target.name, "caption": caption, "hashtags": []}]
     else:
         candidates = [item for item in generated if item.get("image_file") and item.get("image_file") not in done]
         candidates = candidates if args.all else candidates[-max(1, args.limit):]
@@ -63,7 +66,10 @@ def main():
         stamp = datetime.now(timezone.utc).strftime("%Y%m%d-%H%M%S")
         name = f"{stamp}-{safe_name(item.get('caption', 'nepali-meme'))}"
         output = READY_DIR / f"{name}.mp4"
-        create_reel(image_path, item.get("caption", ""), output, args.music)
+        create_reel(
+            image_path, item.get("caption", ""), output, args.music,
+            voice_enabled=not args.no_voice, voice=args.voice,
+        )
         caption_file = CAPTIONS_DIR / f"{name}.txt"
         hashtags = item.get("hashtags", [])
         post_caption = (item.get("caption", "") + "\n\n" + " ".join(hashtags)).strip()
@@ -73,10 +79,11 @@ def main():
             "source_image": image_file,
             "video_file": str(output.relative_to(ROOT)),
             "caption_file": str(caption_file.relative_to(ROOT)),
-            "duration_seconds": 8,
+            "voice": args.voice if not args.no_voice else "disabled",
+            "duration_seconds": "extended to fit narration" if not args.no_voice else 8,
             "width": 1080,
             "height": 1920,
-            "audio": "licensed music file" if args.music else "silent",
+            "audio": "female Nepali narration" if not args.no_voice else ("licensed music file" if args.music else "silent"),
             "publishing": "manual review and posting",
         })
         print(f"Created reel: {output}")
