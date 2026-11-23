@@ -50,7 +50,7 @@ jobs:
       - name: Create vertical MP4 reels with female Nepali narration
         env:
           REEL_LIMIT: ${{ inputs.limit || '3' }}
-          NARRATION: ${{ inputs.narration != false }}
+          NARRATION: ${{ github.event_name == 'schedule' || inputs.narration }}
         run: |
           if [[ "$NARRATION" == "true" ]]; then
             python reel_runner.py --limit "$REEL_LIMIT"
